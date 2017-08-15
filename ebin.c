@@ -4,6 +4,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <termios.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+int kbhit(void)
+{
+	struct termios oldt, newt;
+	int ch;
+	int oldf;
+
+	tcgetattr(STDIN_FILENO, &oldt);
+	newt = oldt;
+	newt.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+	oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+	fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+	ch = getchar();
+
+	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+	fcntl(STDIN_FILENO, F_SETFL, oldf);
+
+	if (ch != EOF) {
+		ungetc(ch, stdin);
+		return 1;
+	}
+
+	return 0;
+}
+
 #define DEBUG 0
 
 void ebin_init(ebin_ctl *ctl, void *e_memory)
@@ -178,12 +208,126 @@ void ebin_exec_lr(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 	ebin_argments_write(cpu,arg,&v);
 }
 
+void ebin_exec_ldb(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t ptr = ebin_argments_read(cpu,e_args[1],0);
+	int32_t ofs = ebin_argments_read(cpu,e_args[2],1);
+	
+	uint32_t dat = *((uint8_t *)(cpu->e_memory+ptr+ofs));
+	
+	ebin_argments_write(cpu,e_args[0],&dat);
+}
+
+void ebin_exec_ldw(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t ptr = ebin_argments_read(cpu,e_args[1],0);
+	int32_t ofs = ebin_argments_read(cpu,e_args[2],1);
+	
+	uint32_t dat = e_read16((uint8_t *)(cpu->e_memory+ptr+ofs));
+	
+	ebin_argments_write(cpu,e_args[0],&dat);
+}
+
+void ebin_exec_ldd(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t ptr = ebin_argments_read(cpu,e_args[1],0);
+	int32_t ofs = ebin_argments_read(cpu,e_args[2],1);
+	
+	uint32_t dat = e_read32((uint8_t *)(cpu->e_memory+ptr+ofs));
+	
+	ebin_argments_write(cpu,e_args[0],&dat);
+}
+
+void ebin_exec_stb(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t ptr = ebin_argments_read(cpu,e_args[1],0);
+	int32_t ofs = ebin_argments_read(cpu,e_args[2],1);
+	
+	*((uint8_t *)(cpu->e_memory+ptr+ofs)) = ebin_argments_read(cpu,e_args[0],0);
+}
+
+void ebin_exec_stw(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t ptr = ebin_argments_read(cpu,e_args[1],0);
+	int32_t ofs = ebin_argments_read(cpu,e_args[2],1);
+	
+	uint32_t data = ebin_argments_read(cpu,e_args[0],0);
+	
+	e_write16((uint8_t *)(cpu->e_memory+ptr+ofs),data);
+}
+
+void ebin_exec_std(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t ptr = ebin_argments_read(cpu,e_args[1],0);
+	int32_t ofs = ebin_argments_read(cpu,e_args[2],1);
+	
+	uint32_t data = ebin_argments_read(cpu,e_args[0],0);
+	
+	e_write32((uint8_t *)(cpu->e_memory+ptr+ofs),data);
+}
+
 void ebin_exec_add(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 {
 	uint32_t a = ebin_argments_read(cpu,e_args[1],0);
 	uint32_t b = ebin_argments_read(cpu,e_args[2],0);
 	uint32_t c = a + b;
 	ebin_argments_write(cpu,e_args[0],&c);
+}
+
+void ebin_exec_sub(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t a = ebin_argments_read(cpu,e_args[1],0);
+	uint32_t b = ebin_argments_read(cpu,e_args[2],0);
+	uint32_t c = a - b;
+	ebin_argments_write(cpu,e_args[0],&c);
+}
+
+void ebin_exec_mul(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t a = ebin_argments_read(cpu,e_args[1],0);
+	uint32_t b = ebin_argments_read(cpu,e_args[2],0);
+	uint32_t c = a * b;
+	ebin_argments_write(cpu,e_args[0],&c);
+}
+
+void ebin_exec_div(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t a = ebin_argments_read(cpu,e_args[1],0);
+	uint32_t b = ebin_argments_read(cpu,e_args[2],0);
+	uint32_t c = a / b;
+	ebin_argments_write(cpu,e_args[0],&c);
+}
+
+void ebin_exec_addi(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	int32_t a = ebin_argments_read(cpu,e_args[1],1);
+	int32_t b = ebin_argments_read(cpu,e_args[2],1);
+	int32_t c = a + b;
+	ebin_argments_write(cpu,e_args[0],(uint32_t *)&c);
+}
+
+void ebin_exec_subi(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	int32_t a = ebin_argments_read(cpu,e_args[1],1);
+	int32_t b = ebin_argments_read(cpu,e_args[2],1);
+	int32_t c = a - b;
+	ebin_argments_write(cpu,e_args[0],(uint32_t *)&c);
+}
+
+void ebin_exec_muli(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	int32_t a = ebin_argments_read(cpu,e_args[1],1);
+	int32_t b = ebin_argments_read(cpu,e_args[2],1);
+	int32_t c = a * b;
+	ebin_argments_write(cpu,e_args[0],(uint32_t *)&c);
+}
+
+void ebin_exec_divi(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	int32_t a = ebin_argments_read(cpu,e_args[1],1);
+	int32_t b = ebin_argments_read(cpu,e_args[2],1);
+	int32_t c = a / b;
+	ebin_argments_write(cpu,e_args[0],(uint32_t *)&c);
 }
 
 void ebin_exec_tx(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
@@ -193,18 +337,99 @@ void ebin_exec_tx(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 	putchar(c);
 }
 
+void ebin_exec_rx(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t c;
+	c = kbhit() ? getchar() : 0xff;
+	
+	ebin_argments_write(cpu,e_args[0],&c);
+}
+
 void ebin_exec_tst(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 {
 	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
 	cpu->e_intreg[35] = 0;
-	if(c == 0) cpu->e_intreg[35] |= 1 << 5;
-	if(c != 0) cpu->e_intreg[35] |= 1 << 6;
+	if(c == 0) cpu->e_intreg[35] |= EF_Z;
+}
+
+void ebin_exec_cmp(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t c1 = ebin_argments_read(cpu,e_args[1],0);
+	uint32_t c2 = ebin_argments_read(cpu,e_args[0],0);
+	cpu->e_intreg[35] = 0;
+	if(c1 ==  0) cpu->e_intreg[35] |= EF_Z;
+	if(c1 == c2) cpu->e_intreg[35] |= EF_E;
+	if(c1  > c2) cpu->e_intreg[35] |= EF_A;
+	if(c1  < c2) cpu->e_intreg[35] |= EF_B;
 }
 
 void ebin_exec_bz(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 {
 	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
-	if(cpu->e_intreg[35] & (1 << 5)) {
+	if((cpu->e_intreg[35] & EF_Z) != 0) {
+		cpu->e_pc = c;
+		cpu->e_branched = 1;
+	}
+}
+
+void ebin_exec_bnz(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
+	if((cpu->e_intreg[35] & EF_Z) == 0) {
+		cpu->e_pc = c;
+		cpu->e_branched = 1;
+	}
+}
+
+void ebin_exec_beq(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
+	if((cpu->e_intreg[35] & EF_E) != 0) {
+		cpu->e_pc = c;
+		cpu->e_branched = 1;
+	}
+}
+
+void ebin_exec_bne(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
+	if((cpu->e_intreg[35] & EF_E) == 0) {
+		cpu->e_pc = c;
+		cpu->e_branched = 1;
+	}
+}
+
+void ebin_exec_ba(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
+	if((cpu->e_intreg[35] & EF_A) != 0) {
+		cpu->e_pc = c;
+		cpu->e_branched = 1;
+	}
+}
+
+void ebin_exec_bb(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
+	if((cpu->e_intreg[35] & EF_B) != 0) {
+		cpu->e_pc = c;
+		cpu->e_branched = 1;
+	}
+}
+
+void ebin_exec_bae(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
+	if((cpu->e_intreg[35] & EF_A) != 0 || (cpu->e_intreg[35] & EF_E) != 0) {
+		cpu->e_pc = c;
+		cpu->e_branched = 1;
+	}
+}
+
+void ebin_exec_bbe(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
+	if((cpu->e_intreg[35] & EF_B) != 0 || (cpu->e_intreg[35] & EF_E) != 0) {
 		cpu->e_pc = c;
 		cpu->e_branched = 1;
 	}
@@ -221,20 +446,32 @@ ebin_execute ebin_execute_func[] = {
 	ebin_exec_pi,
 	ebin_exec_pr,
 	ebin_exec_lr,
-	ebin_exec_xx,
-	ebin_exec_xx,
+	ebin_exec_ldb,
+	ebin_exec_ldw,
+	ebin_exec_ldd,
+	ebin_exec_stb,
+	ebin_exec_stw,
+	ebin_exec_std,
 	ebin_exec_add,
-	ebin_exec_xx,
-	ebin_exec_xx,
-	ebin_exec_xx,
-	ebin_exec_xx,
-	ebin_exec_xx,
-	ebin_exec_xx,
-	ebin_exec_xx,
+	ebin_exec_sub,
+	ebin_exec_mul,
+	ebin_exec_div,
+	ebin_exec_addi,
+	ebin_exec_subi,
+	ebin_exec_muli,
+	ebin_exec_divi,
 	ebin_exec_tx,
-	ebin_exec_xx,
+	ebin_exec_rx,
 	ebin_exec_tst,
+	ebin_exec_cmp,
 	ebin_exec_bz,
+	ebin_exec_bnz,
+	ebin_exec_beq,
+	ebin_exec_bne,
+	ebin_exec_ba,
+	ebin_exec_bae,
+	ebin_exec_bb,
+	ebin_exec_bbe,
 	ebin_exec_b,
 };
 

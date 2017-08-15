@@ -18,13 +18,24 @@ typedef struct {
 	int branch;
 } ebin_operation;
 
+enum {
+	EF_Z=0x0001,
+	EF_E=0x0002,
+	EF_A=0x0004,
+	EF_B=0x0008,
+};
+
 #ifdef EBIN_MODULE_INCLUDE
 ebin_operation operation_list[] = {
 	{ "pi", 0, 0, 0 }, // 8 bytes
 	{ "pr", 1, 0, 0 }, // 4 bytes
 	{ "lr", 1, 1, 0 }, 
-	{ "ld", 2, 3, 0 }, // 2 bytes
-	{ "st", 2, 3, 0 },
+	{ "ldb", 2, 3, 0 }, // 2 bytes
+	{ "ldw", 2, 3, 0 },
+	{ "ldd", 2, 3, 0 },
+	{ "stb", 2, 3, 0 },
+	{ "stw", 2, 3, 0 },
+	{ "std", 2, 3, 0 },
 	{ "add", 2, 3, 0 },
 	{ "sub", 2, 3, 0 },
 	{ "mul", 2, 3, 0 },
@@ -36,7 +47,15 @@ ebin_operation operation_list[] = {
 	{ "tx", 2, 0, 0 },
 	{ "rx", 2, 0, 0 },
 	{ "tst", 2, 1, 0 },
+	{ "cmp", 2, 1, 0 },
 	{ "bz", 2, 1, 1 },
+	{ "bnz", 2, 1, 1 },
+	{ "beq", 2, 1, 1 },
+	{ "bne", 2, 1, 1 },
+	{ "ba", 2, 1, 1 },
+	{ "bae", 2, 1, 1 },
+	{ "bb", 2, 1, 1 },
+	{ "bbe", 2, 1, 1 },
 	{ "b", 2, 1, 1 },
 };
 #else
