@@ -280,7 +280,7 @@ void GenPrintInstr(int instr, int val)
 	case ebinInstrL		: p = "ldd"; break;
 	case ebinInstrSB	: p = "stb"; break;
 	case ebinInstrSW	: p = "stw"; break;
-	case ebinInstrS		: p = "stb"; break;
+	case ebinInstrS		: p = "std"; break;
 	
 	case ebinInstrAdd	: p = "add"; break;
 	case ebinInstrSub	: p = "sub"; break;
@@ -460,12 +460,12 @@ void GenPrintInstr2Operands(int instr, int instrval, int operand1, long operand1
 			GenPrintInstr3Operands(instr, instrval,
 														operand1, operand1val,
 														operand2, operand2val,
-														ebinOpConst, operand2val);
+														ebinOpConst, operand2 < ebinOpConst ? operand2val : 0);
 		} else if(instr >= ebinInstrSB && instr <= ebinInstrS) {
 			GenPrintInstr3Operands(instr, instrval,
 														operand2, operand2val,
 														operand1, operand1val,
-														ebinOpConst, operand1val);
+														ebinOpConst, operand1 < ebinOpConst ? operand1val : 0);
 		} else {
 			GenPrintInstrOneOperand(operand2 < ebinOpConst ? ebinInstrPr : ebinInstrPi, 0, operand2, operand2val);
 			GenPrintInstrOneOperand(operand1 < ebinOpConst ? ebinInstrPr : ebinInstrPi, 0, operand1, operand1val);
@@ -610,9 +610,9 @@ void GenSaveRestoreRegs(int save)
 		if (save || used)
 		{
 			if(used) printf2(save ? "\tpr(%%d%02d)\n" : "\tpr(%%d%02d)\n",r);
-			else printf2(save ? "\t;pr %%d%02d \n" : "\t;pr %%d%02d \n",r);
+			else printf2(save ? "\t;pr %%d%02d\n" : "\t;pr %%d%02d\n",r);
 			if(used) printf2(save ? "\tpush()\n" : "\tpop()\n");
-			else printf2(save ? "\t;push  \n" : "\t;pop  \n");
+			else printf2(save ? "\t;push \n" : "\t;pop \n");
 		}
 	}
 	GenRegsUsed = mask; // undo changes in GenRegsUsed by GenPrintOperand()
@@ -1410,18 +1410,18 @@ void GenCmp(int* idx, int instr)
 
 	GenStartCommentLine(); printf2("GenCmp const=%d cond=%d\n",constness,condbranch);
 
-	uint32_t and,xor;
+	uint32_t and;
 
 	switch(instr) {
-		case ebinInstrJE	: and=EF_E,xor=EF_X; break;
-		case ebinInstrJA	: and=EF_A,xor=EF_X; break;
-		case ebinInstrJB	: and=EF_B,xor=EF_X; break;
-		case ebinInstrJZ	: and=EF_Z,xor=EF_X; break;
-		case ebinInstrJNZ	: and=EF_Z,xor=EF_Z; break;
-		case ebinInstrJNE	: and=EF_E,xor=EF_E; break;
+		case ebinInstrJE	: and=EF_E; break;
+		case ebinInstrJA	: and=EF_A; break;
+		case ebinInstrJB	: and=EF_B; break;
+		case ebinInstrJZ	: and=EF_Z; break;
+		case ebinInstrJNZ	: and=EF_Z; break;
+		case ebinInstrJNE	: and=EF_E; break;
 		
-		case ebinInstrJAE	: and=EF_E|EF_A,xor=EF_X; break;
-		case ebinInstrJBE	: and=EF_E|EF_B,xor=EF_X; break;
+		case ebinInstrJAE	: and=EF_E|EF_A; break;
+		case ebinInstrJBE	: and=EF_E|EF_B; break;
 	}
 
 	if (constness == 2)
@@ -1437,13 +1437,58 @@ void GenCmp(int* idx, int instr)
 			GenPrintInstr2Operands(ebinInstrIf, 0,
 														 GenWreg, 0,
 														 ebinOpConst, constval);
-		if(condbranch != 1) 
-			GenPrintInstr2Operands(ebinInstrXor, 0,
+		if(condbranch != 1) {
+			int jabesilde = 2;
+			
+			switch(instr) {
+				case ebinInstrJE :
+				case ebinInstrJA :
+				case ebinInstrJB :
+				case ebinInstrJZ :
+				case ebinInstrJNZ :
+				case ebinInstrJNE :
+					GenPrintInstr2Operands(ebinInstrXor, 0,
 														 ebinOpRegFlags, 0,
 														 ebinOpConst, and);
-		GenPrintInstr2Operands(ebinInstrXor, 0,
+					break;
+				case ebinInstrJAE :
+					jabesilde = 3;
+				case ebinInstrJBE :
+					GenPrintInstr2Operands(ebinInstrMov, 0,
+														 TEMP_REG_A, 0,
+														 ebinOpRegFlags, 0);
+					GenPrintInstr2Operands(ebinInstrMov, 0,
+														 TEMP_REG_B, 0,
+														 ebinOpRegFlags, 0);
+					GenPrintInstr2Operands(ebinInstrLRS, 0,
+														 TEMP_REG_A, 0,
+														 ebinOpConst, 1);
+					GenPrintInstr2Operands(ebinInstrLRS, 0,
+														 TEMP_REG_B, 0,
+														 ebinOpConst, jabesilde);
+														 
+					GenPrintInstr2Operands(ebinInstrAnd, 0,
+														 TEMP_REG_A, 0,
+														 ebinOpConst, 1);
+					GenPrintInstr2Operands(ebinInstrAnd, 0,
+														 TEMP_REG_B, 0,
+														 ebinOpConst, 1);
+					GenPrintInstr2Operands(ebinInstrOr, 0,
+														 TEMP_REG_A, 0,
+														 TEMP_REG_B, 0);
+					GenPrintInstr2Operands(ebinInstrXor, 0,
+														 TEMP_REG_A, 0,
+														 ebinOpConst, 1);
+					GenPrintInstr2Operands(ebinInstrLLS, 0,
+														 TEMP_REG_A, 0,
+														 ebinOpConst, 1);
+					GenPrintInstr2Operands(ebinInstrMov, 0,
 														 ebinOpRegFlags, 0,
-														 ebinOpConst, xor);
+														 TEMP_REG_A, 0);
+					break;
+			}
+		}
+		
 		GenPrintInstr1Operand(instr, 0,
 														 ebinOpNumLabel, label);
 	}
@@ -1465,9 +1510,6 @@ void GenCmp(int* idx, int instr)
 		GenPrintInstr2Operands(ebinInstrAnd, 0,	
 														 TEMP_REG_B, 0,
 														 ebinOpConst, and);
-		GenPrintInstr2Operands(ebinInstrXor, 0,
-														 ebinOpRegFlags, 0,
-														 ebinOpConst, xor);
 		GenPrintInstr2Operands(ebinInstrMov, 0,
 														 GenWreg, 0,
 														 TEMP_REG_B, 0);
@@ -1531,7 +1573,7 @@ void GenExpr0(void)
 #ifndef NO_ANNOTATIONS
 		switch (tok)
 		{
-			case tokNumInt: GenStartCommentLine(); printf2("%d\n", truncInt(v)); break;
+		case tokNumInt: GenStartCommentLine(); printf2("%d\n", truncInt(v)); break;
 		//case tokNumUint: printf2(" ; %uu\n", truncUint(v)); break;
 		case tokIdent: case tokRevIdent: GenStartCommentLine(); printf2("%s\n", IdentTable + v); break;
 		case tokLocalOfs: case tokRevLocalOfs: GenStartCommentLine(); printf2("local ofs\n"); break;
@@ -1554,6 +1596,7 @@ void GenExpr0(void)
 		{
 		// TBD??? forward tokNumInt and tokIdent to ',', push them directly, w/o extra moves
 		case tokNumInt:
+			GenStartCommentLine(); printf2("(NumInt)\n");
 			if (!(i + 1 < sp && ((t = stack[i + 1][0]) == '+' ||
 													 t == '-' ||
 													 t == tokRevMinus ||
@@ -1573,6 +1616,7 @@ void GenExpr0(void)
 				if (gotUnary)
 					GenPushReg();
 
+				
 				GenPrintInstr2Operands(ebinInstrMov, 0,
 															 GenWreg, 0,
 															 ebinOpConst, v);
@@ -1655,6 +1699,7 @@ void GenExpr0(void)
 														GenWreg, 0);
 			break;
 		case tokUnaryMinus:
+			GenStartCommentLine(); printf2("(Unary)\n");
 			GenPrintInstr2Operands(ebinInstrRSub, 0,
 														 GenWreg, 0,
 														 ebinOpConst, 0);
@@ -1674,6 +1719,7 @@ void GenExpr0(void)
 		case tokUDiv:
 		case '%':
 		case tokUMod:
+			GenStartCommentLine(); printf2("(Normal)\n");
 			if (stack[i - 1][0] == tokNumInt)
 			{
 				int instr = GenGetBinaryOperatorInstr(tok);
@@ -1740,6 +1786,7 @@ void GenExpr0(void)
 
 		case tokPostAdd:
 		case tokPostSub:
+			GenStartCommentLine(); printf2("(Post)\n");
 			{
 				int instr = GenGetBinaryOperatorInstr(tok);
 				GenPopReg();
@@ -1792,6 +1839,7 @@ void GenExpr0(void)
 		case tokAssignUMod:
 		//case '-':
 		//case tokRevMinus:
+			GenStartCommentLine(); printf2("(Assign)\n");
 			if (stack[i - 1][0] == tokRevLocalOfs || stack[i - 1][0] == tokRevIdent)
 			{
 				int instr = GenGetBinaryOperatorInstr(tok);
@@ -1863,14 +1911,17 @@ void GenExpr0(void)
 		case '=':
 			if (stack[i - 1][0] == tokRevLocalOfs)
 			{
+				GenStartCommentLine(); printf2("(local)\n");
 				GenWriteLocal(GenWreg, v, stack[i - 1][1]);
 			}
 			else if (stack[i - 1][0] == tokRevIdent)
 			{
+				GenStartCommentLine(); printf2("(ident)\n");
 				GenWriteIdent(GenWreg, v, stack[i - 1][1]);
 			}
 			else
 			{
+				GenStartCommentLine(); printf2("(other)\n");
 				GenPopReg();
 				GenWriteIndirect(GenLreg, GenRreg, v);
 				if (GenWreg != GenRreg)

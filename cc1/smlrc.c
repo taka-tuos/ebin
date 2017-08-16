@@ -2599,7 +2599,8 @@ int exprUnary(int tok, int* gotUnary, int commaSeparator, int argOfSizeOf)
           puts2(CurHeaderFooter[1]);
         puts2(RoDataHeaderFooter[0]);
         GenNumLabel(lbl);
-        printf2("\tjmp(.T%d)\n",GenTextLabelNext);
+        printf2("\tpi(.T%d)\n",GenTextLabelNext);
+        printf2("\tb()\n");
         lbl = LabelCnt++;
         GenNumLabel(lbl);
       }

@@ -34,7 +34,7 @@ int kbhit(void)
 	return 0;
 }
 
-#define DEBUG 0
+#define DEBUG 1
 
 void ebin_init(ebin_ctl *ctl, void *e_memory)
 {
@@ -420,8 +420,9 @@ void ebin_exec_ars(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 void ebin_exec_tx(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 {
 	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
-	//printf("tx() : \'%c\'\n",c);
-	putchar(c);
+	printf("tx() : \'%c\'\n",c);
+	//putchar(c);
+	if(c == 0x0a) exit(0);
 }
 
 void ebin_exec_rx(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
@@ -441,13 +442,13 @@ void ebin_exec_tst(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 
 void ebin_exec_cmp(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 {
-	uint32_t c1 = ebin_argments_read(cpu,e_args[1],0);
-	uint32_t c2 = ebin_argments_read(cpu,e_args[0],0);
+	uint32_t c1 = ebin_argments_read(cpu,e_args[0],0);
+	uint32_t c2 = ebin_argments_read(cpu,e_args[1],0);
 	cpu->e_intreg[35] = 0;
 	if(c1 ==  0) cpu->e_intreg[35] |= EF_Z;
 	if(c1 == c2) cpu->e_intreg[35] |= EF_E;
-	if(c1  > c2) cpu->e_intreg[35] |= EF_A;
-	if(c1  < c2) cpu->e_intreg[35] |= EF_B;
+	if(c1  < c2) cpu->e_intreg[35] |= EF_A;
+	if(c1  > c2) cpu->e_intreg[35] |= EF_B;
 }
 
 void ebin_exec_bz(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
