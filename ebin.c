@@ -523,6 +523,8 @@ void ebin_exec(ebin_ctl *ctl)
 #endif
 		ebin_execute_func[e_opcode](ctl,e_fetch,args);
 #if DEBUG
+		printf("->[x]=0x%08x\n",ebin_argments_read(ctl,arg,0));
+		
 		for(int i = 0; i < operation_list[e_opcode].reqn; i++) {
 			printf("->[%d]=0x%08x\n",i,ebin_argments_read(ctl,args[i],0));
 		}

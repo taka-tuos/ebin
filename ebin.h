@@ -86,7 +86,7 @@ typedef struct {
 	uint8_t e_argopt;
 	uint8_t e_srcreg;
 	uint8_t e_srcimm[4];
-} ebin_fetch __attribute__((__packed__));
+} ebin_fetch;
 
 typedef struct {
 	uint32_t val;

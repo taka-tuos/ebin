@@ -1,4 +1,5 @@
-	org($0x1000)
+	global(._main)
+._main
 	pi(.text)
 	lr(%d0)
 .loop
@@ -15,7 +16,7 @@
 	pi(.fin)
 	bz()
 	pi(.loop)
-	b(%1)
+	b()
 .fin
 	pi(.fin)
 	b()
