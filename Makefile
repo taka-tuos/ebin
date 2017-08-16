@@ -13,6 +13,5 @@ sample : Makefile Makefile.in
 
 sampleC : Makefile Makefile.in
 	 as/as crt0.s crt0.o -coff
-	 cc1/cc1 hello.c hello.s
-	 as/as hello.s hello.o -coff
+	 ucc/ucc -coff hello.c hello.o
 	 ld/ld hello.bin 0x1000 crt0.o hello.o

@@ -34,7 +34,7 @@ int kbhit(void)
 	return 0;
 }
 
-#define DEBUG 1
+#define DEBUG 0
 
 void ebin_init(ebin_ctl *ctl, void *e_memory)
 {
@@ -65,13 +65,13 @@ uint32_t ebin_oppush(ebin_ctl *ctl, uint32_t data)
 
 int ebin_pop(ebin_ctl *ctl)
 {
+	ctl->e_intreg[32] += 4;
 	uint8_t *le = ((uint8_t *)ctl->e_memory) + ctl->e_intreg[32];
 #if DEBUG
-	printf("pop : [sp]=%08x\n",ctl->e_intreg[32]);
-	printf("pop : ->[sp]=%08x\n",ctl->e_intreg[32]+4);
+	printf("pop : [sp]=%08x\n",ctl->e_intreg[32]-4);
+	printf("pop : ->[sp]=%08x\n",ctl->e_intreg[32]);
 	printf("pop : [x]=%08x\n",e_read32(le));
 #endif
-	ctl->e_intreg[32] += 4;
 	return e_read32(le);
 }
 
@@ -420,7 +420,7 @@ void ebin_exec_ars(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 void ebin_exec_tx(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 {
 	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
-	//printf("tx() : \'%c\'",c);
+	//printf("tx() : \'%c\'\n",c);
 	putchar(c);
 }
 

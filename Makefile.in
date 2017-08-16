@@ -11,6 +11,8 @@ default :
 	$(MAKE) -C as
 	$(MAKE) -C ld
 	$(MAKE) -C cc1
+	$(MAKE) -C cpp
+	$(MAKE) -C ucc
 	$(MAKE) $(TARGET)
 
 # rules
@@ -32,4 +34,18 @@ clean :
 	$(MAKE) -C as clean
 	$(MAKE) -C ld clean
 	$(MAKE) -C cc1 clean
+	$(MAKE) -C cpp clean
+	$(MAKE) -C ucc clean
 	-$(RM) *.o
+
+clean-full :
+	$(MAKE) clean
+	$(MAKE) -C as clean-full
+	$(MAKE) -C ld clean-full
+	$(MAKE) -C cc1 clean-full
+	$(MAKE) -C cpp clean-full
+	$(MAKE) -C ucc clean-full
+	-$(RM) $(TARGET)
+
+git :
+	$(MAKE) clean-full

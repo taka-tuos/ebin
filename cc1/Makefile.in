@@ -27,3 +27,7 @@ $(TARGET) : $(OBJS_TARGET) cgebin.c Makefile Makefile.in
 
 clean :
 	-$(RM) *.o
+
+clean-full :
+	$(MAKE) clean
+	-$(RM) $(TARGET)
