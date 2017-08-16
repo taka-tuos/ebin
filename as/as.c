@@ -28,7 +28,7 @@ typedef struct {
 
 label_t label[4096];
 symbol_t symbol[4096];
-int replace_addr[65536];
+uint32_t replace_addr[65536];
 int last_label = 0;
 int last_replace = 0;
 int last_symbol = 0;
@@ -514,7 +514,7 @@ void assenble_fetch(FILE *in, FILE *out, int mode, int mode2)
 				arg = get_argments(s);
 				if(arg.t != EFETCH_IIMM) errmsg("alignment boundary must be const");
 				for(i = 0; ((now_address + i) % arg.d) != 0; i++);
-				memset(image+now_address,0,i);
+				if(mode && !mode2) memset(image+now_address,0,i);
 				now_address += i;
 			}
 			
@@ -522,7 +522,7 @@ void assenble_fetch(FILE *in, FILE *out, int mode, int mode2)
 				argments_t arg;
 				arg = get_argments(s);
 				if(arg.t != EFETCH_IIMM) errmsg("fill length must be const");
-				memset(image+now_address,0,arg.d);
+				if(mode && !mode2) memset(image+now_address,0,arg.d);
 				now_address += arg.d;
 			}
 		}

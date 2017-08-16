@@ -270,13 +270,15 @@ int get_remoteness(int img)
 unsigned int rep_entry(coffhead_t *p, int img, int idx)
 {
 	unsigned int *rep = (unsigned int *)(image[img] + p->repaddr);
-	return e_read32(&image[img][rep[idx]+p->repaddr+p->repno*4]);
+	uint8_t *repV = (uint8_t *)&image[img][rep[idx]+p->repaddr+p->repno*4];
+	return e_read32(repV);
 }
 
 void rep_entry_write(coffhead_t *p, int img, int idx, unsigned int data)
 {
 	int *rep = (int *)(image[img] + p->repaddr);
-	e_write32(&image[img][rep[idx]+p->repaddr+p->repno*4],data);
+	uint8_t *repV = (uint8_t *)&image[img][rep[idx]+p->repaddr+p->repno*4];
+	e_write32(repV,data);
 }
 
 int main(int argc, char *argv[])

@@ -19,6 +19,7 @@ typedef struct {
 } ebin_operation;
 
 enum {
+	EF_X=0x0000,
 	EF_Z=0x0001,
 	EF_E=0x0002,
 	EF_A=0x0004,
@@ -27,6 +28,7 @@ enum {
 
 #ifdef EBIN_MODULE_INCLUDE
 ebin_operation operation_list[] = {
+	{ "nop", 2, 0, 0 },
 	{ "pi", 0, 0, 0 }, // 8 bytes
 	{ "pr", 1, 0, 0 }, // 4 bytes
 	{ "lr", 1, 1, 0 }, 
@@ -36,6 +38,8 @@ ebin_operation operation_list[] = {
 	{ "stb", 2, 3, 0 },
 	{ "stw", 2, 3, 0 },
 	{ "std", 2, 3, 0 },
+	{ "push", 2, 1, 0 },
+	{ "pop", 2, 1, 0 },
 	{ "add", 2, 3, 0 },
 	{ "sub", 2, 3, 0 },
 	{ "mul", 2, 3, 0 },
@@ -44,8 +48,17 @@ ebin_operation operation_list[] = {
 	{ "subi", 2, 3, 0 },
 	{ "muli", 2, 3, 0 },
 	{ "divi", 2, 3, 0 },
-	{ "tx", 2, 0, 0 },
-	{ "rx", 2, 0, 0 },
+	{ "rsub", 2, 3, 0 },
+	{ "rsubi", 2, 3, 0 },
+	{ "and", 2, 3, 0 },
+	{ "or", 2, 3, 0 },
+	{ "xor", 2, 3, 0 },
+	{ "not", 2, 2, 0 },
+	{ "lrs", 2, 3, 0 },
+	{ "lls", 2, 3, 0 },
+	{ "ars", 2, 3, 0 },
+	{ "tx", 2, 1, 0 },
+	{ "rx", 2, 1, 0 },
 	{ "tst", 2, 1, 0 },
 	{ "cmp", 2, 1, 0 },
 	{ "bz", 2, 1, 1 },
@@ -57,6 +70,8 @@ ebin_operation operation_list[] = {
 	{ "bb", 2, 1, 1 },
 	{ "bbe", 2, 1, 1 },
 	{ "b", 2, 1, 1 },
+	{ "c", 2, 1, 1 },
+	{ "r", 2, 0, 1 },
 };
 #else
 extern ebin_operation operation_list[];

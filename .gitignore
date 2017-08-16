@@ -51,6 +51,8 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-*.ebin
+*.bin
 as/as
+ld/ld
+cc1/cc1
 exec-ebin

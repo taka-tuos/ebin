@@ -8,14 +8,11 @@ CP		= cp
 # default
 
 default :
-	$(MAKE) -C as
-	$(MAKE) -C ld
-	$(MAKE) -C cc1
 	$(MAKE) $(TARGET)
 
 # rules
 
-$(TARGET) : $(OBJS_TARGET) Makefile Makefile.in
+$(TARGET) : $(OBJS_TARGET) cgebin.c Makefile Makefile.in
 	$(GCC) $(OBJS_TARGET) $(LIBS) -o $(TARGET)
 
 # normal rules
@@ -29,7 +26,4 @@ $(TARGET) : $(OBJS_TARGET) Makefile Makefile.in
 # commands
 
 clean :
-	$(MAKE) -C as clean
-	$(MAKE) -C ld clean
-	$(MAKE) -C cc1 clean
 	-$(RM) *.o
