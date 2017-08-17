@@ -21,10 +21,10 @@ void execute_cmd(char *cmd, char *name, int enlog, FILE *logfp)
 		stdout_n++;
 	}
 	if(!fp || (child_ret = pclose(fp)) != 0) {
-		if(child_ret != -2017) printf("%s Returned %d\n",name,child_ret);
-		else printf("%s execute failed\n",name);
-		printf("%s execute stage failed.\n",name);
-		printf("stdout :\n");
+		if(child_ret != -2017) fprintf(stderr,"%s Returned %d\n",name,child_ret);
+		else fprintf(stderr,"%s execute failed\n",name);
+		fprintf(stderr,"%s execute stage failed.\n",name);
+		fprintf(stderr,"stdout :\n");
 		for(i = 0; i < stdout_n; i++) printf(stdout_d[i]);
 		if(enlog) {
 			fprintf(logfp,"%s Returned %d\n",name,child_ret);
