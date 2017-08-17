@@ -5,6 +5,37 @@
 
 #define OPTION(s) strcmp(argv[i],s) == 0
 
+void execute_cmd(char *cmd, char *name, int enlog, FILE *logfp)
+{
+	char *stdout_d[4096];
+	int stdout_n = 0;
+	char stdout_b[1024];
+	int i;
+	int child_ret = -2017;
+	
+	if(enlog) fprintf(logfp,"%s Stage\nCommand line : %s\n>>>>BEGIN\n",name,cmd);
+	FILE *fp = popen(cmd,"r");
+	while(fp && fgets(stdout_b,1024,fp)) {
+		stdout_d[stdout_n] = strdup(stdout_b);
+		if(enlog) fputs(stdout_d[stdout_n],logfp);
+		stdout_n++;
+	}
+	if(!fp || (child_ret = pclose(fp)) != 0) {
+		if(child_ret != -2017) printf("%s Returned %d\n",name,child_ret);
+		else printf("%s execute failed\n",name);
+		printf("%s execute stage failed.\n",name);
+		printf("stdout :\n");
+		for(i = 0; i < stdout_n; i++) printf(stdout_d[i]);
+		if(enlog) {
+			fprintf(logfp,"%s Returned %d\n",name,child_ret);
+			fprintf(logfp,">>>>END(FAILED)\n\n");
+			fclose(logfp);
+		}
+		exit(-1);
+	}
+	if(enlog) fprintf(logfp,">>>>END\n\n");
+}
+
 int main(int argc, char *argv[], char *envp[])
 {
 	char cc1[4096];
@@ -149,67 +180,9 @@ int main(int argc, char *argv[], char *envp[])
 		logfp = fopen(logname,"wt");
 	}
 	
-	char *stdout_d[4096];
-	int stdout_n = 0;
-	
-	char stdout_b[1024];
-	
-	puts(cpp);
-	fp = popen(cpp,"r");
-	while(fp && fgets(stdout_b,1024,fp)) {
-		stdout_d[stdout_n] = strdup(stdout_b);
-		if(enlog) fputs(stdout_d[stdout_n],logfp);
-		stdout_n++;
-	}
-	if(!fp || (child_ret = pclose(fp)) != 0) {
-		if(child_ret != -2017) printf("Preprocessor Returnd %d\n",child_ret);
-		else printf("Preprocessor execute failed\n");
-		printf("Compilation failed.\n");
-		printf("stdout :\n");
-		for(i = 0; i < stdout_n; i++) printf(stdout_d[i]);
-		if(enlog) fclose(logfp);
-		return -1;
-	}
-	
-	stdout_n = 0;
-	child_ret = -2017;
-	
-	puts(cc1);
-	fp = popen(cc1,"r");
-	while(fp && fgets(stdout_b,1024,fp)) {
-		stdout_d[stdout_n] = strdup(stdout_b);
-		if(enlog) fputs(stdout_d[stdout_n],logfp);
-		stdout_n++;
-	}
-	if(!fp || (child_ret = pclose(fp)) != 0) {
-		if(child_ret != -2017) printf("Compiler Returnd %d\n",child_ret);
-		else printf("Compiler execute failed\n");
-		printf("Compilation failed.\n");
-		printf("stdout :\n");
-		for(i = 0; i < stdout_n; i++) printf(stdout_d[i]);
-		if(enlog) fclose(logfp);
-		return -1;
-	}
-	
-	stdout_n = 0;
-	child_ret = -2017;
-	
-	puts(as);
-	fp = popen(as,"r");
-	while(fp && fgets(stdout_b,1024,fp)) {
-		stdout_d[stdout_n] = strdup(stdout_b);
-		if(enlog) fputs(stdout_d[stdout_n],logfp);
-		stdout_n++;
-	}
-	if(!fp || (child_ret = pclose(fp)) != 0) {
-		if(child_ret != -2017) printf("Assembler Returnd %d\n",child_ret);
-		else printf("Assembler execute failed\n");
-		printf("Compilation failed.\n");
-		printf("stdout :\n");
-		for(i = 0; i < stdout_n; i++) printf(stdout_d[i]);
-		if(enlog) fclose(logfp);
-		return -1;
-	}
+	execute_cmd(cpp,"Preprocessor",enlog,logfp);
+	execute_cmd(cc1,"Compiler",enlog,logfp);
+	execute_cmd(as,"Assembler",enlog,logfp);
 	
 	if(enlog) fclose(logfp);
 	
