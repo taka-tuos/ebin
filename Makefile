@@ -1,10 +1,13 @@
 TARGET		= exec-ebin
 OBJS_TARGET	= exec.o ebin.o
 
-CFLAGS = -O0 -g -std=gnu99 -Wall
-LIBS = 
+CFLAGS := -O0 -g -std=gnu99 -Wall 
+LIBS := 
 
 include Makefile.in
+
+debug : Makefile Makefile.in
+	$(MAKE) CFLAGS+=-D__DEBUG__ $(TARGET)
 
 sample : Makefile Makefile.in
 	 as/as crt0.s crt0.o -coff

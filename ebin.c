@@ -34,8 +34,6 @@ int kbhit(void)
 	return 0;
 }
 
-#define DEBUG 1
-
 void ebin_init(ebin_ctl *ctl, void *e_memory)
 {
 	ctl->e_memory = e_memory;
@@ -67,7 +65,7 @@ int ebin_pop(ebin_ctl *ctl)
 {
 	ctl->e_intreg[32] += 4;
 	uint8_t *le = ((uint8_t *)ctl->e_memory) + ctl->e_intreg[32];
-#if DEBUG
+#ifdef __DEBUG__
 	printf("pop : [sp]=%08x\n",ctl->e_intreg[32]-4);
 	printf("pop : ->[sp]=%08x\n",ctl->e_intreg[32]);
 	printf("pop : [x]=%08x\n",e_read32(le));
@@ -78,7 +76,7 @@ int ebin_pop(ebin_ctl *ctl)
 void ebin_push(ebin_ctl *ctl, int data)
 {
 	uint8_t *le = ((uint8_t *)ctl->e_memory) + ctl->e_intreg[32];
-#if DEBUG
+#ifdef __DEBUG__
 	printf("push : [sp]=%08x\n",ctl->e_intreg[32]);
 	printf("push : ->[sp]=%08x\n",ctl->e_intreg[32]-4);
 	printf("push : [x]=%08x\n",data);
@@ -245,7 +243,7 @@ void ebin_exec_ldd(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 	uint32_t ptr = ebin_argments_read(cpu,e_args[1],0);
 	int32_t ofs = ebin_argments_read(cpu,e_args[2],1);
 	
-#if DEBUG
+#ifdef __DEBUG__
 	printf("ldd : address(%08x)(%08x+%08x)\n",ptr+ofs,ptr,ofs);
 #endif
 
@@ -311,6 +309,7 @@ void ebin_exec_div(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 	uint32_t a = ebin_argments_read(cpu,e_args[1],0);
 	uint32_t b = ebin_argments_read(cpu,e_args[2],0);
 	uint32_t c = a / b;
+	cpu->e_intreg[33] = a % b;
 	ebin_argments_write(cpu,e_args[0],&c);
 }
 
@@ -343,6 +342,7 @@ void ebin_exec_divi(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 	int32_t a = ebin_argments_read(cpu,e_args[1],1);
 	int32_t b = ebin_argments_read(cpu,e_args[2],1);
 	int32_t c = a / b;
+	cpu->e_intreg[33] = a % b;
 	ebin_argments_write(cpu,e_args[0],(uint32_t *)&c);
 }
 
@@ -420,8 +420,8 @@ void ebin_exec_ars(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 void ebin_exec_tx(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 {
 	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
-	printf("tx() : \'%c\'\n",c);
-	//putchar(c);
+	//printf("tx() : \'%c\'\n",c);
+	putchar(c);
 	if(c == 0x0a) exit(0);
 }
 
@@ -442,13 +442,13 @@ void ebin_exec_tst(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 
 void ebin_exec_cmp(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 {
-	uint32_t c1 = ebin_argments_read(cpu,e_args[0],0);
-	uint32_t c2 = ebin_argments_read(cpu,e_args[1],0);
+	uint32_t c1 = ebin_argments_read(cpu,e_args[0],0); // d0
+	uint32_t c2 = ebin_argments_read(cpu,e_args[1],0); // 9
 	cpu->e_intreg[35] = 0;
 	if(c1 ==  0) cpu->e_intreg[35] |= EF_Z;
 	if(c1 == c2) cpu->e_intreg[35] |= EF_E;
-	if(c1  < c2) cpu->e_intreg[35] |= EF_A;
-	if(c1  > c2) cpu->e_intreg[35] |= EF_B;
+	if(c1  > c2) cpu->e_intreg[35] |= EF_A;
+	if(c1  < c2) cpu->e_intreg[35] |= EF_B;
 }
 
 void ebin_exec_bz(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
@@ -561,6 +561,20 @@ void ebin_exec_pop(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 	ebin_argments_write(cpu,e_args[0],&c);
 }
 
+void ebin_exec_sigxb(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t a = ebin_argments_read(cpu,e_args[1],0);
+	uint32_t c = a | (((a >> 7) & 1) * 0xFFFFFF00); 
+	ebin_argments_write(cpu,e_args[0],&c);
+}
+
+void ebin_exec_sigxw(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
+{
+	uint32_t a = ebin_argments_read(cpu,e_args[1],0);
+	uint32_t c = a | (((a >> 15) & 1) * 0xFFFF0000); 
+	ebin_argments_write(cpu,e_args[0],&c);
+}
+
 ebin_execute ebin_execute_func[] = {
 	ebin_exec_xx,
 	ebin_exec_pi,
@@ -584,6 +598,8 @@ ebin_execute ebin_execute_func[] = {
 	ebin_exec_divi,
 	ebin_exec_rsub,
 	ebin_exec_rsubi,
+	ebin_exec_sigxb,
+	ebin_exec_sigxw,
 	ebin_exec_and,
 	ebin_exec_or,
 	ebin_exec_xor,
@@ -608,6 +624,28 @@ ebin_execute ebin_execute_func[] = {
 	ebin_exec_r,
 };
 
+#ifdef __DEBUG__
+void ebin_print_argment(ebin_argments arg)
+{
+	int siz = arg.opt >> 4;
+	int bch = "bwd"[siz];
+	switch(arg.opt & 0x0f) {
+	case EFETCH_IREG:
+		printf("%%%c%d",bch,arg.val);
+		break;
+	case EFETCH_MREG:
+		printf("%c%%d%d",bch,arg.val);
+		break;
+	case EFETCH_IIMM:
+		printf("$0x%x[%d](%c)",arg.val,arg.val,bch);
+		break;
+	case EFETCH_MIMM:
+		printf("%c$0x%x[%d]",bch,arg.val,arg.val);
+		break;
+	}
+}
+#endif
+
 void ebin_exec(ebin_ctl *ctl)
 {
 	ebin_fetch *e_fetch = (ebin_fetch *)((uint8_t *)ctl->e_memory + ctl->e_pc);
@@ -619,7 +657,7 @@ void ebin_exec(ebin_ctl *ctl)
 		for(int i = 0; i < operation_list[e_opcode].reqn; i++) {
 			args[i] = ebin_argments_pop(ctl);
 		}
-#if DEBUG
+#ifdef __DEBUG__
 		printf("%08x : %s(",ctl->e_pc,operation_list[e_opcode].name);
 		ebin_argments arg;
 		
@@ -628,34 +666,26 @@ void ebin_exec(ebin_ctl *ctl)
 			arg.opt = e_fetch->e_argopt;
 			if(operation_list[e_opcode].type == 0) arg.val = e_read32(e_fetch->e_srcimm);
 			if(operation_list[e_opcode].type == 1) arg.val = e_fetch->e_srcreg;
-			
-			int siz = arg.opt >> 4;
-			int bch = "bwd"[siz];
-			switch(arg.opt & 0x0f) {
-			case EFETCH_IREG:
-				printf("%%%c%d",bch,arg.val);
-				break;
-			case EFETCH_MREG:
-				printf("%c%%d%d",bch,arg.val);
-				break;
-			case EFETCH_IIMM:
-				printf("$0x%x[%d](%c)",arg.val,arg.val,bch);
-				break;
-			case EFETCH_MIMM:
-				printf("%c$0x%x[%d]",bch,arg.val,arg.val);
-				break;
-			}
+			ebin_print_argment(arg);
 		}
 		puts(")");
 		
-		printf("[x]=0x%08x\n",ebin_argments_read(ctl,arg,0));
+		if(operation_list[e_opcode].type < 2) {
+			printf("[x]=0x%08x\n",ebin_argments_read(ctl,arg,0));
+			printf(">> ");
+			ebin_print_argment(arg);
+			puts("");
+		}
 		
 		for(int i = 0; i < operation_list[e_opcode].reqn; i++) {
 			printf("[%d]=0x%08x\n",i,ebin_argments_read(ctl,args[i],0));
+			printf(">> ");
+			ebin_print_argment(args[i]);
+			puts("");
 		}
 #endif
 		ebin_execute_func[e_opcode](ctl,e_fetch,args);
-#if DEBUG
+#ifdef __DEBUG__
 		printf("->[x]=0x%08x\n",ebin_argments_read(ctl,arg,0));
 		
 		for(int i = 0; i < operation_list[e_opcode].reqn; i++) {

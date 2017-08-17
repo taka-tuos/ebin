@@ -50,6 +50,8 @@ ebin_operation operation_list[] = {
 	{ "divi", 2, 3, 0 },
 	{ "rsub", 2, 3, 0 },
 	{ "rsubi", 2, 3, 0 },
+	{ "sigxb", 2, 2, 0 },
+	{ "sigxw", 2, 2, 0 },
 	{ "and", 2, 3, 0 },
 	{ "or", 2, 3, 0 },
 	{ "xor", 2, 3, 0 },

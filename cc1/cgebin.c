@@ -224,6 +224,9 @@ void GenRecordFxnSize(char* startLabelName, int endLabelNo)
 #define ebinInstrPr			0x81
 #define ebinInstrLr			0x82
 
+#define ebinInstrSigxB		0x83
+#define ebinInstrSigxW		0x84
+
 #define ebinInstrLB			0x02
 #define ebinInstrLW			0x03
 #define ebinInstrL			0x04
@@ -274,6 +277,9 @@ void GenPrintInstr(int instr, int val)
 	case ebinInstrPi	: p = "pi"; break;
 	case ebinInstrPr	: p = "pr"; break;
 	case ebinInstrLr	: p = "lr"; break;
+	
+	case ebinInstrSigxB	: p = "sigxb"; break;
+	case ebinInstrSigxW	: p = "sigxw"; break;
 
 	case ebinInstrLB	: p = "ldb"; break;
 	case ebinInstrLW	: p = "ldw"; break;
@@ -366,7 +372,7 @@ void GenPrintOperand(int op, long val)
 	{
 		switch (op)
 		{
-		case ebinOpConst: printf2("$%10ld", truncInt(val)); break;
+		case ebinOpConst: printf2("$%10d", truncInt(val)); break;
 		case ebinOpLabel: GenPrintLabel(IdentTable + val); break;
 		case ebinOpNumLabel: GenPrintNumLabel(val); break;
 
@@ -490,21 +496,9 @@ void GenExtendRegIfNeeded(int reg, int opSz)
 {
 	if (opSz == -1)
 	{
-		GenPrintInstr2Operands(ebinInstrMov, 0,
-													 TEMP_REG_A, 0,
-													 reg, 0);
-		GenPrintInstr2Operands(ebinInstrLRS, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 7);
-		GenPrintInstr2Operands(ebinInstrAnd, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 1);
-		GenPrintInstr2Operands(ebinInstrMul, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 0xFFFFFF00);
-		GenPrintInstr2Operands(ebinInstrOr, 0,
+		GenPrintInstr2Operands(ebinInstrSigxB, 0,
 													 reg, 0,
-													 TEMP_REG_A, 0);
+													 reg, 0);
 	}
 	else if (opSz == 1)
 	{
@@ -514,21 +508,9 @@ void GenExtendRegIfNeeded(int reg, int opSz)
 	}
 	else if (opSz == -2)
 	{
-		GenPrintInstr2Operands(ebinInstrMov, 0,
-													 TEMP_REG_A, 0,
-													 reg, 0);
-		GenPrintInstr2Operands(ebinInstrLRS, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 15);
-		GenPrintInstr2Operands(ebinInstrAnd, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 1);
-		GenPrintInstr2Operands(ebinInstrMul, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 0xFFFF0000);
-		GenPrintInstr2Operands(ebinInstrOr, 0,
+		GenPrintInstr2Operands(ebinInstrSigxW, 0,
 													 reg, 0,
-													 TEMP_REG_A, 0);
+													 reg, 0);
 	}
 	else if (opSz == 2)
 	{
@@ -795,31 +777,13 @@ void GenReadIdent(int regDst, int opSz, int label)
 												 ebinOpLabel, label);
 
 	if (opSz == -1) {
-		GenPrintInstr2Operands(ebinInstrMov, 0,
-													 TEMP_REG_A, 0,
-													 regDst, 0);
-		GenPrintInstr2Operands(ebinInstrLRS, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 7);
-		GenPrintInstr2Operands(ebinInstrMul, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 0xFFFFFF00);
-		GenPrintInstr2Operands(ebinInstrOr, 0,
+		GenPrintInstr2Operands(ebinInstrSigxB, 0,
 													 regDst, 0,
-													 TEMP_REG_A, 0);
+													 regDst, 0);
 	} else if (opSz == -2) {
-		GenPrintInstr2Operands(ebinInstrMov, 0,
-													 TEMP_REG_A, 0,
-													 regDst, 0);
-		GenPrintInstr2Operands(ebinInstrLRS, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 15);
-		GenPrintInstr2Operands(ebinInstrMul, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 0xFFFF0000);
-		GenPrintInstr2Operands(ebinInstrOr, 0,
+		GenPrintInstr2Operands(ebinInstrSigxW, 0,
 													 regDst, 0,
-													 TEMP_REG_A, 0);
+													 regDst, 0);
 	}
 }
 
@@ -840,31 +804,13 @@ void GenReadLocal(int regDst, int opSz, int ofs)
 												 ebinOpIndRegBp, ofs);
 
 	if (opSz == -1) {
-		GenPrintInstr2Operands(ebinInstrMov, 0,
-													 TEMP_REG_A, 0,
-													 regDst, 0);
-		GenPrintInstr2Operands(ebinInstrLRS, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 7);
-		GenPrintInstr2Operands(ebinInstrMul, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 0xFFFFFF00);
-		GenPrintInstr2Operands(ebinInstrOr, 0,
+		GenPrintInstr2Operands(ebinInstrSigxB, 0,
 													 regDst, 0,
-													 TEMP_REG_A, 0);
+													 regDst, 0);
 	} else if (opSz == -2) {
-		GenPrintInstr2Operands(ebinInstrMov, 0,
-													 TEMP_REG_A, 0,
-													 regDst, 0);
-		GenPrintInstr2Operands(ebinInstrLRS, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 15);
-		GenPrintInstr2Operands(ebinInstrMul, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 0xFFFF0000);
-		GenPrintInstr2Operands(ebinInstrOr, 0,
+		GenPrintInstr2Operands(ebinInstrSigxW, 0,
 													 regDst, 0,
-													 TEMP_REG_A, 0);
+													 regDst, 0);
 	}
 }
 
@@ -885,31 +831,13 @@ void GenReadIndirect(int regDst, int regSrc, int opSz)
 												 regSrc + ebinOpIndReg0, 0);
 
 	if (opSz == -1) {
-		GenPrintInstr2Operands(ebinInstrMov, 0,
-													 TEMP_REG_A, 0,
-													 regDst, 0);
-		GenPrintInstr2Operands(ebinInstrLRS, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 7);
-		GenPrintInstr2Operands(ebinInstrMul, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 0xFFFFFF00);
-		GenPrintInstr2Operands(ebinInstrOr, 0,
+		GenPrintInstr2Operands(ebinInstrSigxB, 0,
 													 regDst, 0,
-													 TEMP_REG_A, 0);
+													 regDst, 0);
 	} else if (opSz == -2) {
-		GenPrintInstr2Operands(ebinInstrMov, 0,
-													 TEMP_REG_A, 0,
-													 regDst, 0);
-		GenPrintInstr2Operands(ebinInstrLRS, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 15);
-		GenPrintInstr2Operands(ebinInstrMul, 0,
-													 TEMP_REG_A, 0,
-													 ebinOpConst, 0xFFFF0000);
-		GenPrintInstr2Operands(ebinInstrOr, 0,
+		GenPrintInstr2Operands(ebinInstrSigxW, 0,
 													 regDst, 0,
-													 TEMP_REG_A, 0);
+													 regDst, 0);
 	}
 }
 
@@ -1438,7 +1366,7 @@ void GenCmp(int* idx, int instr)
 														 GenWreg, 0,
 														 ebinOpConst, constval);
 		if(condbranch != 1) {
-			int jabesilde = 2;
+			int jabesilde = 3;
 			
 			switch(instr) {
 				case ebinInstrJE :
@@ -1452,7 +1380,7 @@ void GenCmp(int* idx, int instr)
 														 ebinOpConst, and);
 					break;
 				case ebinInstrJAE :
-					jabesilde = 3;
+					jabesilde = 2;
 				case ebinInstrJBE :
 					GenPrintInstr2Operands(ebinInstrMov, 0,
 														 TEMP_REG_A, 0,
@@ -1949,29 +1877,19 @@ void GenExpr0(void)
 														 GenWreg, 0);
 			GenPrintInstr2Operands(ebinInstrMov, 0,
 														 GenWreg, 0,
-														 ebinOpRegFlags, 1);
-			GenPrintInstr2Operands(ebinInstrLRS, 0,
-														 GenWreg, 0,
-														 ebinOpConst, 6);
+														 ebinOpRegFlags, 0);
 			GenPrintInstr2Operands(ebinInstrAnd, 0,
 														 GenWreg, 0,
-														 ebinOpRegFlags, 1);
+														 ebinOpConst, 1);
+			GenPrintInstr2Operands(ebinInstrXor, 0,
+														 GenWreg, 0,
+														 ebinOpConst, 1);
 			break;
 
 		case tokSChar:
-			GenPrintInstr2Operands(ebinInstrMov, 0,
-														 TEMP_REG_A, 0,
-														 GenWreg, 0);
-			GenPrintInstr2Operands(ebinInstrLRS, 0,
-														 TEMP_REG_A, 0,
-														 ebinOpConst, 7);
-														 
-			GenPrintInstr2Operands(ebinInstrMul, 0,
-														 TEMP_REG_A, 0,
-														 ebinOpConst, 0xFFFFFF00);
-			GenPrintInstr2Operands(ebinInstrOr, 0,
+			GenPrintInstr2Operands(ebinInstrSigxB, 0,
 														 GenWreg, 0,
-														 TEMP_REG_A, 0);
+														 GenWreg, 0);
 			break;
 		case tokUChar:
 			GenPrintInstr2Operands(ebinInstrAnd, 0,
@@ -1979,16 +1897,9 @@ void GenExpr0(void)
 														 ebinOpConst, 0xFF);
 			break;
 		case tokShort:
-			GenPrintInstr2Operands(ebinInstrLRS, 0,
-														 TEMP_REG_A, 0,
-														 ebinOpConst, 15);
-														 
-			GenPrintInstr2Operands(ebinInstrMul, 0,
-														 TEMP_REG_A, 0,
-														 ebinOpConst, 0xFFFF0000);
-			GenPrintInstr2Operands(ebinInstrOr, 0,
+			GenPrintInstr2Operands(ebinInstrSigxW, 0,
 														 GenWreg, 0,
-														 TEMP_REG_A, 0);
+														 GenWreg, 0);
 			break;
 		case tokUShort:
 			GenPrintInstr2Operands(ebinInstrAnd, 0,
