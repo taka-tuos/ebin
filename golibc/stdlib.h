@@ -17,17 +17,21 @@
 #define EXIT_FAILURE		1
 
 int abs(int n);
+double atof(const char *s);
 int atoi(const char *s);
 void qsort(void *base, size_t n, size_t size,
 	int (*cmp)(const void *, const void *));
 int rand(void);
 extern unsigned int rand_seed;
-int strtol(const char *s, const char **endp, int base);
-unsigned int strtoul(const char *s, const char **endp, int base);
+double strtod(const char *s, const char **endp);
+long strtol(const char *s, const char **endp, int base);
+unsigned long strtoul(const char *s, const char **endp, int base);
 
-/* for strdup() */
 void *malloc(unsigned int nbytes);
 void free(void *ap);
+void exit(int status);
+#define abort()		exit(EXIT_FAILURE)
+int system(const char *s);
 
 #if (defined(__cplusplus))
 	}

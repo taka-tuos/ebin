@@ -2,7 +2,7 @@
 
 #include <limits.h>
 
-unsigned int strtoul0(const unsigned char **ps, int base, unsigned char *errflag);
+unsigned long strtoul0(const unsigned char **ps, int base, unsigned char *errflag);
 
 static int prefix(int c)
 {
@@ -20,10 +20,10 @@ static int prefix(int c)
 	return base;
 }
 
-unsigned int strtoul0(const unsigned char **ps, int base, unsigned char *errflag)
+unsigned long strtoul0(const unsigned char **ps, int base, unsigned char *errflag)
 {
 	const unsigned char *s = *ps;
-	unsigned int val = 0, max;
+	unsigned long val = 0, max;
 	int digit;
 	if (base == 0) {
 		base += 10;
@@ -37,7 +37,7 @@ unsigned int strtoul0(const unsigned char **ps, int base, unsigned char *errflag
 		if (base == prefix(*(s + 1)))
 			s += 2;
 	}
-	max = UINT_MAX / base;
+	max = ULONG_MAX / base;
 	*errflag = 0;
 	for (;;) {
 		digit = 99;
@@ -52,10 +52,10 @@ unsigned int strtoul0(const unsigned char **ps, int base, unsigned char *errflag
 		if (val > max)
 			goto err;
 		val *= base;
-		if (UINT_MAX - val < (unsigned int) digit) {
+		if (ULONG_MAX - val < (unsigned long) digit) {
 err:
 			*errflag = 1;
-			val = UINT_MAX;
+			val = ULONG_MAX;
 		} else
 			val += digit;
 		s++;

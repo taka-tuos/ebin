@@ -373,6 +373,12 @@ int main(int argc, char *argv[])
 				char *name = symbol_attr_find(p,attr);
 				int img;
 				symbol_t t = symbol_find(name,&img);
+				
+				if(t.name[0] == 0) {
+					printf("undefined symbol `%s`\n",name);
+					return 3;
+				}
+				
 				int rmtns = get_remoteness(img);
 				rep_entry_write(p,i,j,t.attribute[0]+base_address+rmtns);
 				printf("name : %s\nfinal address : %08x\n\n",t.name,t.attribute[0]+base_address+rmtns);

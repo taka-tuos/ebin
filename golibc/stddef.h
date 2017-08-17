@@ -14,7 +14,6 @@ typedef unsigned int size_t;
 	#define NULL	((void *) 0)
 #endif
 
-
 #if (defined(__cplusplus))
 	}
 #endif

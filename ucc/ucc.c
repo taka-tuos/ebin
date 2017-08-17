@@ -1,45 +1,50 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
-#define BINPATH "."
+#define OPTION(s) strcmp(argv[i],s) == 0
 
-#define OPTION(s) strncmp(argv[i],s,strlen(s)) == 0
-
-int hash(char *sz)
+int main(int argc, char *argv[], char *envp[])
 {
-	int i;
-	for(i = 0;*sz;sz++) i += *sz;
-	return i;
-}
-
-int main(int argc, char *argv[])
-{
-	char arg_cc1[4096];
-	char arg_cpp[4096];
-	char arg_as[4096];
-	char arg_ast[512];
+	char cc1[4096];
+	char cpp[4096];
+	char as[4096];
+	
+	char binname[2048];
+	char logname[2048] = "";
+	
 	char sz[512];
 	char option_format[64] = "-flat";
 	int i;
 	int next = 0;
 	int ret;
 	int ptr = 0;
+	int enlog = 0;
+	
+	
+	char *dumppath = strdup(argv[0]);
+	char *path = dirname(dumppath);
+	
+	sprintf(as, "%s/../as/as ",path);
+	sprintf(cc1,"%s/../cc1/cc1 ",path);
+	sprintf(cpp, "%s/../cpp/cpp ",path);
 	
 	if(argc < 3) {
 		puts("Error : too few argments");
-		printf("usage : %s [option] <sourcename> <outputname>\n",argv[0]);
+		printf("usage : %s [option] source output\n",argv[0]);
 		return 3;
 	}
 	
-	strcpy(arg_cc1,BINPATH "/cc1/cc1 ");
-	strcpy(arg_cpp,BINPATH "/cpp/cpp ");
-	strcpy(arg_as,BINPATH "/as/as ");
-	
 	for(i = 1; i < argc; i++) {
-		if(next > 0) {
-			strcat(arg_cpp,argv[i]);
-			strcat(arg_cpp," ");
+		if(next == 1) {
+			strcat(cpp,argv[i]);
+			strcat(cpp," ");
+			next = 0;
+			continue;
+		}
+		if(next == 2) {
+			strcpy(logname,argv[i]);
 			next = 0;
 			continue;
 		}
@@ -47,8 +52,8 @@ int main(int argc, char *argv[])
 			OPTION("-I") ||
 			OPTION("-J")
 		) {
-			strcat(arg_cpp,argv[i]);
-			strcat(arg_cpp," ");
+			strcat(cpp,argv[i]);
+			strcat(cpp," ");
 			next = 1;
 		} else if(
 			OPTION("-C") ||
@@ -75,24 +80,36 @@ int main(int argc, char *argv[])
 			OPTION("-v") ||
 			OPTION("-h")
 		) {
-			strcat(arg_cpp,argv[i]);
-			strcat(arg_cpp," ");
+			strcat(cpp,argv[i]);
+			strcat(cpp," ");
 		} else if(
 			OPTION("-flat") ||
 			OPTION("-coff")
 		) {
 			strcpy(option_format,argv[i]);
+		} else if(
+			OPTION("-log")
+		) {
+			next = 2;
+			enlog = 1;
+		} else if(
+			OPTION("-help")
+		) {
+			puts("micro portable cc `UCC` by kagura1050");
+			puts("Version : git");
+			printf("usage : %s [option] source output\n",argv[0]);
+			return 1;
 		} else {
 			if(ptr < 2) {
 				if(ptr) {
-					strcpy(arg_ast,argv[i]);
+					strcpy(binname,argv[i]);
 				}
 				if(!ptr) {
-					strcat(arg_cpp,argv[i]);
-					strcat(arg_cpp," ");
+					strcat(cpp,argv[i]);
+					strcat(cpp," ");
 				}
 			} else {
-				puts("Error : too many filenames");
+				puts("Error : too many filename");
 				return 1;
 			}
 			ptr++;
@@ -104,28 +121,97 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 	
-	srand(hash(arg_ast));
+	if(logname[0] == 0 && enlog) {
+		puts("Error : log file is not specified");
+		return 4;
+	}
 	
-	int tmp1 = ((rand()+rand()) << 16) | (rand()+rand());
-	int tmp2 = tmp1 + 1;
+	int tmp = time(NULL);
 	
-	sprintf(sz,"%08x.tmp %s %s",tmp2,arg_ast,option_format);
-	strcat(arg_as,sz);
+	char *allname = strdup(binname);
+	char *purename = basename(allname);
 	
-	sprintf(sz,"-o %08x.tmp",tmp1);
-	strcat(arg_cpp,sz);
+	sprintf(sz,"_ucc_%08x_%s_asm.tmp %s %s",tmp,purename,binname,option_format);
+	strcat(as,sz);
 	
-	sprintf(sz,"%08x.tmp %08x.tmp",tmp1,tmp2);
-	strcat(arg_cc1,sz);
+	sprintf(sz,"-o _ucc_%08x_%s_cxx.tmp",tmp,purename);
+	strcat(cpp,sz);
 	
-	sprintf(sz,"rm %08x.tmp %08x.tmp",tmp1,tmp2);
+	sprintf(sz,"_ucc_%08x_%s_cxx.tmp _ucc_%08x_%s_asm.tmp",tmp,purename,tmp,purename);
+	strcat(cc1,sz);
 	
-	puts(arg_cpp);
-	system(arg_cpp);
-	puts(arg_cc1);
-	system(arg_cc1);
-	puts(arg_as);
-	system(arg_as);
+	int child_ret = -2017;
+	FILE *fp;
+	
+	FILE *logfp;
+	
+	if(enlog) {
+		logfp = fopen(logname,"wt");
+	}
+	
+	char *stdout_d[4096];
+	int stdout_n = 0;
+	
+	char stdout_b[1024];
+	
+	puts(cpp);
+	fp = popen(cpp,"r");
+	while(fp && fgets(stdout_b,1024,fp)) {
+		stdout_d[stdout_n] = strdup(stdout_b);
+		if(enlog) fputs(stdout_d[stdout_n],logfp);
+		stdout_n++;
+	}
+	if(!fp || (child_ret = pclose(fp)) != 0) {
+		if(child_ret != -2017) printf("Preprocessor Returnd %d\n",child_ret);
+		else printf("Preprocessor execute failed\n");
+		printf("Compilation failed.\n");
+		printf("stdout :\n");
+		for(i = 0; i < stdout_n; i++) printf(stdout_d[i]);
+		if(enlog) fclose(logfp);
+		return -1;
+	}
+	
+	stdout_n = 0;
+	child_ret = -2017;
+	
+	puts(cc1);
+	fp = popen(cc1,"r");
+	while(fp && fgets(stdout_b,1024,fp)) {
+		stdout_d[stdout_n] = strdup(stdout_b);
+		if(enlog) fputs(stdout_d[stdout_n],logfp);
+		stdout_n++;
+	}
+	if(!fp || (child_ret = pclose(fp)) != 0) {
+		if(child_ret != -2017) printf("Compiler Returnd %d\n",child_ret);
+		else printf("Compiler execute failed\n");
+		printf("Compilation failed.\n");
+		printf("stdout :\n");
+		for(i = 0; i < stdout_n; i++) printf(stdout_d[i]);
+		if(enlog) fclose(logfp);
+		return -1;
+	}
+	
+	stdout_n = 0;
+	child_ret = -2017;
+	
+	puts(as);
+	fp = popen(as,"r");
+	while(fp && fgets(stdout_b,1024,fp)) {
+		stdout_d[stdout_n] = strdup(stdout_b);
+		if(enlog) fputs(stdout_d[stdout_n],logfp);
+		stdout_n++;
+	}
+	if(!fp || (child_ret = pclose(fp)) != 0) {
+		if(child_ret != -2017) printf("Assembler Returnd %d\n",child_ret);
+		else printf("Assembler execute failed\n");
+		printf("Compilation failed.\n");
+		printf("stdout :\n");
+		for(i = 0; i < stdout_n; i++) printf(stdout_d[i]);
+		if(enlog) fclose(logfp);
+		return -1;
+	}
+	
+	if(enlog) fclose(logfp);
 	
 	return 0;
 }

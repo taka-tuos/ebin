@@ -422,7 +422,7 @@ void ebin_exec_tx(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])
 	uint32_t c = ebin_argments_read(cpu,e_args[0],0);
 	//printf("tx() : \'%c\'\n",c);
 	putchar(c);
-	if(c == 0x0a) exit(0);
+	//if(c == 0x0a) exit(0);
 }
 
 void ebin_exec_rx(ebin_ctl *cpu, ebin_fetch *e_fetch, ebin_argments e_args[])

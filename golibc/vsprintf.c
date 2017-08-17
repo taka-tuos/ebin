@@ -22,11 +22,11 @@ int vsprintf(char *s, const char *format, va_list arg)
 {
 	UCHAR c, *t = s, *p, flag_left, flag_zero /* , flag_sign, flag_space */;
 	UCHAR temp[32] /* êîéöóp */, *q;
+	temp[31] = '\0';
 	int field_min, field_max, i;
 	long l;
 	static char hextable_X[16] = "0123456789ABCDEF";
 	static char hextable_x[16] = "0123456789abcdef";
-	temp[31] = '\0';
 	for (;;) {
 		c = *format++;
 		if (c != '%') {

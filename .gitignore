@@ -53,7 +53,10 @@ dkms.conf
 
 *.bin
 *.tmp
+*.lst
 as/as
 ld/ld
 cc1/cc1
+cpp/cpp
+ucc/ucc
 exec-ebin

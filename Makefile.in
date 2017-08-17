@@ -13,6 +13,7 @@ default :
 	$(MAKE) -C cc1
 	$(MAKE) -C cpp
 	$(MAKE) -C ucc
+	$(MAKE) -C golibc
 	$(MAKE) $(TARGET)
 
 # rules
@@ -36,6 +37,7 @@ clean :
 	$(MAKE) -C cc1 clean
 	$(MAKE) -C cpp clean
 	$(MAKE) -C ucc clean
+	$(MAKE) -C golibc clean
 	-$(RM) *.o
 
 clean-full :
@@ -45,6 +47,7 @@ clean-full :
 	$(MAKE) -C cc1 clean-full
 	$(MAKE) -C cpp clean-full
 	$(MAKE) -C ucc clean-full
+	$(MAKE) -C golibc clean-full
 	-$(RM) $(TARGET)
 
 git :

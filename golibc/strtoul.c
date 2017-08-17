@@ -2,13 +2,13 @@
 
 #include <errno.h>
 
-unsigned int strtoul0(const char **ps, int base, char *errflag);
+unsigned long strtoul0(const char **ps, int base, char *errflag);
 
-unsigned int strtoul(const char *s, const char **endp, int base)
+unsigned long strtoul(const char *s, const char **endp, int base)
 {
 	const char *s0 = s, *s1;
 	char sign = 0, errflag;
-	unsigned int val;
+	unsigned long val;
 	while (*s != '\0' && *s <= ' ')
 		s++;
 	if (*s == '-') {

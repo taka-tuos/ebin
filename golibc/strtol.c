@@ -3,13 +3,13 @@
 #include <errno.h>
 #include <limits.h>
 
-unsigned int strtoul0(const char **ps, int base, char *errflag);
+unsigned long strtoul0(const char **ps, int base, char *errflag);
 
-int strtol(const char *s, const char **endp, int base)
+long strtol(const char *s, const char **endp, int base)
 {
 	const char *s0 = s, *s1;
 	char sign = 0, errflag;
-	unsigned int val;
+	unsigned long val;
 	while (*s != '\0' && *s <= ' ')
 		s++;
 	if (*s == '-') {
@@ -24,11 +24,11 @@ int strtol(const char *s, const char **endp, int base)
 		s = s0;
 	if (endp)
 		*endp = s;
-	if (val > INT_MAX) {
+	if (val > LONG_MAX) {
 		errflag = 1;
-		val = INT_MAX;
+		val = LONG_MAX;
 		if (sign)
-			val = INT_MIN;
+			val = LONG_MIN;
 	}
 	if (errflag == 0 && sign != 0)
 		val = - val;
