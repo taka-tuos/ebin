@@ -60,7 +60,7 @@ char *gpc_getop(char *s)
 	char *p = s;
 
 	for(;*p==' '||*p==0x09;p++);
-	for(i = 0;*p!='(';p++,i++) {
+	for(i = 0;*p!='('&&*p;p++,i++) {
 		str[i]=*p;
 	}
 

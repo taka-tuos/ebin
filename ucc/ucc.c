@@ -5,6 +5,22 @@
 
 #define OPTION(s) strcmp(argv[i],s) == 0
 
+char *getpath(char *path)
+{
+	char *p = path + strlen(path);
+	for(;p!=path&&*p!='/'&&*p!='\\';p--);
+	p++;
+	*p=0;
+	return path;
+}
+
+char *getpure(char *path)
+{
+	char *p = path + strlen(path);
+	for(;p!=path&&*p!='/'&&*p!='\\';p--);
+	return p;
+}
+
 void execute_cmd(char *cmd, char *name, int enlog, FILE *logfp)
 {
 	char *stdout_d[4096];
@@ -53,17 +69,20 @@ int main(int argc, char *argv[], char *envp[])
 	int ptr = 0;
 	int enlog = 0;
 	
+	char argvpath[2048];
 	
-	char *dumppath = strdup(argv[0]);
-	char *path = dirname(dumppath);
+	readlink("/proc/self/exe", argvpath, sizeof(argvpath)-1);
+	
+	char *dumppath = strdup(argvpath);
+	char *path = getpath(dumppath);
 	
 	sprintf(as, "%s/../as/as ",path);
 	sprintf(cc1,"%s/../cc1/cc1 ",path);
 	sprintf(cpp, "%s/../cpp/cpp ",path);
 	
 	if(argc < 3) {
-		puts("Error : too few argments");
 		printf("usage : %s [option] source output\n",argv[0]);
+		puts("Error : too few argments");
 		return 3;
 	}
 	
@@ -160,7 +179,7 @@ int main(int argc, char *argv[], char *envp[])
 	int tmp = time(NULL);
 	
 	char *allname = strdup(binname);
-	char *purename = basename(allname);
+	char *purename = getpure(allname);
 	
 	sprintf(sz,"_ucc_%08x_%s_asm.tmp %s %s",tmp,purename,binname,option_format);
 	strcat(as,sz);
